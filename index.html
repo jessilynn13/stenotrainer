@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StenoTrainer — Learn Stenography the Fun Way</title>
+  <meta name="description" content="A free browser-based stenography typing game. Practice steno machine writing with speed, accuracy, and danger!"/>
+
+  <!-- ═══════════════════════════════════════════════════
+       GOOGLE ADSENSE — paste your approved code here
+       It will look like:
+       <script async src="https://pagead2.googlesyndication.com/..."></script>
+       ═══════════════════════════════════════════════════ -->
+
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --bg:#0a0a14;--surf:#14142a;--surf2:#1a1a35;
+      --red:#e94560;--gold:#f5a623;--green:#00c896;--blue:#4488ff;
+      --text:#eaeaea;--muted:#7777aa;--mono:'Courier New',monospace;
+      --font:'Segoe UI',system-ui,sans-serif;
+    }
+    body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;flex-direction:column;}
+
+    /* ── HEADER ── */
+    header{background:var(--surf);border-bottom:2px solid var(--red);padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
+    .logo{font-size:1.4rem;font-weight:700;color:var(--text);text-decoration:none;}
+    .logo span{color:var(--red);}
+    nav a{color:var(--muted);text-decoration:none;margin-left:1.25rem;font-size:.85rem;transition:color .2s;}
+    nav a:hover{color:var(--text);}
+
+    /* ── AD SLOTS ── */
+    .ad-slot{background:var(--surf2);border:1px dashed #2a2a55;text-align:center;padding:.6rem;font-size:.7rem;color:var(--muted);letter-spacing:.06em;}
+
+    /* ── LAYOUT ── */
+    .page-body{flex:1;display:flex;gap:1rem;padding:1rem;justify-content:center;}
+    .side-ad{width:160px;min-width:160px;display:flex;flex-direction:column;gap:.5rem;}
+    .side-ad-box{background:var(--surf2);border:1px dashed #2a2a55;flex:1;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--muted);letter-spacing:.06em;text-align:center;padding:.5rem;min-height:200px;}
+    @media(max-width:700px){.side-ad{display:none;}}
+    .center-col{flex:1;max-width:660px;display:flex;flex-direction:column;gap:.75rem;}
+
+    /* ── SCREENS ── */
+    .scr{display:none;flex-direction:column;align-items:center;gap:1rem;}
+    .scr.on{display:flex;}
+
+    /* ── MENU ── */
+    .m-title{font-size:2rem;font-weight:700;text-align:center;padding-top:.5rem;}
+    .m-title span{color:var(--red);}
+    .m-sub{font-size:.875rem;color:var(--muted);text-align:center;line-height:1.7;max-width:480px;}
+    .badge{background:var(--surf);border:1px solid #2a2a55;border-radius:8px;padding:.4rem 1rem;font-family:var(--mono);font-size:.8rem;color:var(--gold);letter-spacing:.04em;}
+    .lgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.75rem;width:100%;}
+    .lcard{background:var(--surf);border:1px solid #2a2a55;border-radius:12px;padding:1rem .75rem;cursor:pointer;text-align:center;transition:transform .15s,border-color .15s,box-shadow .15s;}
+    .lcard:hover:not(.locked){transform:translateY(-3px);border-color:var(--red);box-shadow:0 4px 18px rgba(233,69,96,.25);}
+    .lcard.locked{opacity:.35;cursor:not-allowed;filter:grayscale(1);}
+    .lcard.done{border-color:var(--green);}
+    .lcard.premium{border-color:var(--gold);border-style:dashed;}
+    .li{font-size:1.5rem;margin-bottom:.25rem;}
+    .ln{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.2rem;}
+    .lname{font-size:.9rem;font-weight:600;margin-bottom:.2rem;}
+    .lmeta{font-size:.7rem;color:var(--muted);}
+    .pbadge{font-size:.6rem;color:var(--gold);margin-top:.3rem;letter-spacing:.04em;}
+
+    /* ── HUD ── */
+    .hud{display:flex;gap:.5rem;width:100%;}
+    .hb{flex:1;background:var(--surf);border:1px solid #2a2a55;border-radius:8px;padding:.5rem .5rem;text-align:center;}
+    .hl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+    .hv{font-size:1.1rem;font-weight:700;color:var(--gold);}
+
+    /* ── SCENE CANVAS ── */
+    #scene{width:100%;border-radius:10px;border:1px solid #2a2a55;display:block;background:#050510;}
+
+    /* ── DANGER BAR ── */
+    .dbar-wrap{width:100%;height:8px;background:var(--surf);border-radius:99px;overflow:hidden;border:1px solid #2a2a55;}
+    .dbar-fill{height:100%;border-radius:99px;transition:width .35s,background .35s;}
+
+    /* ── WORD AREA ── */
+    .tword{font-family:var(--mono);font-size:1.9rem;font-weight:700;letter-spacing:.08em;background:var(--surf);border-radius:8px;padding:.35rem 1.5rem;border:1px solid #2a2a55;text-align:center;}
+    .tdisp{font-family:var(--mono);font-size:1.6rem;font-weight:700;width:100%;text-align:center;background:var(--surf);border:2px solid #2a2a55;border-radius:8px;padding:.3rem .75rem;color:var(--text);letter-spacing:.06em;transition:border-color .15s,color .15s;min-height:44px;}
+    .tdisp.ok{border-color:var(--green);color:var(--green);}
+    .tdisp.bad{border-color:var(--red);color:var(--red);}
+    #ri{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;}
+    .upcoming{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;}
+    .upcoming span{font-family:var(--mono);font-size:.7rem;color:#444466;background:var(--surf);border-radius:4px;padding:2px 7px;}
+    .fb{font-size:.95rem;font-weight:700;height:22px;line-height:22px;}
+    .fb.ok{color:var(--green);}.fb.bad{color:var(--red);}
+    .hint{font-size:.72rem;color:#44446a;text-align:center;}
+
+    /* ── BUTTONS ── */
+    .btn{background:transparent;border:1.5px solid var(--red);color:var(--text);border-radius:7px;padding:.5rem 1.2rem;font-size:.85rem;font-family:var(--font);cursor:pointer;transition:background .15s,transform .1s;}
+    .btn:hover{background:rgba(233,69,96,.15);transform:translateY(-1px);}
+    .btn:active{transform:scale(.97);}
+    .btn.primary{background:var(--red);color:#fff;}
+    .btn.primary:hover{background:#c73652;}
+    .btn.gold{border-color:var(--gold);color:var(--gold);}
+    .btn.gold:hover{background:rgba(245,166,35,.15);}
+    .brow{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;}
+
+    /* ── RESULTS ── */
+    .rbanner{font-size:1.5rem;font-weight:700;text-align:center;}
+    .rbanner.win{color:var(--green);}.rbanner.lose{color:var(--red);}
+    .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;width:100%;max-width:320px;}
+    .sbox{background:var(--surf);border:1px solid #2a2a55;border-radius:8px;padding:.75rem;text-align:center;}
+    .slbl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem;}
+    .sval{font-size:1.35rem;font-weight:700;color:var(--gold);}
+
+    /* ── PAYWALL ── */
+    .pw{background:var(--surf);border:1.5px solid var(--gold);border-radius:14px;padding:1.5rem;text-align:center;max-width:400px;width:100%;}
+    .pw h2{font-size:1.15rem;color:var(--gold);margin-bottom:.5rem;}
+    .pw p{font-size:.82rem;color:var(--muted);line-height:1.7;margin-bottom:.75rem;}
+    .pw .price{font-size:1.9rem;font-weight:700;color:var(--text);margin-bottom:.75rem;}
+    .pw .price small{font-size:.85rem;color:var(--muted);}
+    .pw-note{font-size:.65rem;color:#333355;margin-top:.6rem;}
+
+    /* ── FOOTER ── */
+    footer{background:var(--surf);border-top:1px solid #2a2a55;text-align:center;padding:.75rem;font-size:.72rem;color:var(--muted);}
+    footer a{color:var(--muted);text-decoration:underline;}
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="index.html">Steno<span>Trainer</span></a>
+  <nav>
+    <a href="index.html">Play</a>
+    <a href="privacy.html">Privacy</a>
+  </nav>
+</header>
+
+<!-- TOP AD — replace with your AdSense code when approved -->
+<div class="ad-slot">ADVERTISEMENT — Add Google AdSense code here</div>
+
+<div class="page-body">
+
+  <!-- LEFT SIDEBAR AD -->
+  <div class="side-ad">
+    <div class="side-ad-box">AD<br>SPACE<br><br>Add AdSense<br>code here</div>
+    <div class="side-ad-box">AD<br>SPACE<br><br>Add AdSense<br>code here</div>
+  </div>
+
+  <!-- CENTER GAME COLUMN -->
+  <div class="center-col">
+
+    <!-- MENU SCREEN -->
+    <div class="scr on" id="s-menu">
+      <div class="m-title">Steno<span>Trainer</span></div>
+      <p class="m-sub">Type steno words before disaster strikes! Stay fast and accurate to survive each world.</p>
+      <div class="badge">Letters: A B C D E F G H I J K L M N O P Q R S &nbsp;|&nbsp; Numbers: 1 3 4 5 6 7 8</div>
+      <div class="lgrid" id="lgrid"></div>
+    </div>
+
+    <!-- PLAY SCREEN -->
+    <div class="scr" id="s-play">
+      <div class="hud">
+        <div class="hb"><div class="hl">WPM</div><div class="hv" id="h-wpm">—</div></div>
+        <div class="hb"><div class="hl">Accuracy</div><div class="hv" id="h-acc">—</div></div>
+        <div class="hb"><div class="hl">Word</div><div class="hv" id="h-word">—</div></div>
+        <div class="hb"><div class="hl">Danger</div><div class="hv" id="h-danger" style="color:var(--green);">Safe</div></div>
+      </div>
+      <div class="dbar-wrap"><div class="dbar-fill" id="dfill" style="width:0%;background:var(--green);"></div></div>
+      <canvas id="scene" height="180"></canvas>
+      <div class="tword" id="tw">—</div>
+      <div class="tdisp" id="td">…</div>
+      <input id="ri" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <div class="fb" id="fb"></div>
+      <div class="upcoming" id="upc"></div>
+      <div class="hint">Click here · stroke your word · auto-submits when matched</div>
+      <div class="brow"><button class="btn" id="b-quit">← Menu</button></div>
+    </div>
+
+    <!-- PAYWALL SCREEN -->
+    <div class="scr" id="s-pay">
+      <div class="pw">
+        <h2>&#9733; Premium Level Pack</h2>
+        <p>You've mastered the free levels! Unlock harder words, brutal danger scenes, and exclusive worlds.</p>
+        <div class="price">$4.99 <small>/ pack</small></div>
+        <div class="brow">
+          <button class="btn gold" id="b-buy">Unlock Now</button>
+          <button class="btn" id="b-pay-back">← Back</button>
+        </div>
+        <p class="pw-note">Powered by Stripe — add your Stripe payment link to the Unlock Now button</p>
+      </div>
+    </div>
+
+    <!-- RESULTS SCREEN -->
+    <div class="scr" id="s-res">
+      <div class="rbanner" id="rbanner"></div>
+      <div class="sgrid">
+        <div class="sbox"><div class="slbl">Your WPM</div><div class="sval" id="r-wpm">—</div></div>
+        <div class="sbox"><div class="slbl">Accuracy</div><div class="sval" id="r-acc">—</div></div>
+        <div class="sbox"><div class="slbl">Correct</div><div class="sval" id="r-cor">—</div></div>
+        <div class="sbox"><div class="slbl">Goal WPM</div><div class="sval" id="r-goal">—</div></div>
+      </div>
+      <div class="brow">
+        <button class="btn primary" id="b-retry">Try Again</button>
+        <button class="btn" id="b-rmenu">Menu</button>
+      </div>
+    </div>
+
+  </div><!-- /center-col -->
+
+  <!-- RIGHT SIDEBAR AD -->
+  <div class="side-ad">
+    <div class="side-ad-box">AD<br>SPACE<br><br>Add AdSense<br>code here</div>
+    <div class="side-ad-box">AD<br>SPACE<br><br>Add AdSense<br>code here</div>
+  </div>
+
+</div><!-- /page-body -->
+
+<!-- BOTTOM AD -->
+<div class="ad-slot">ADVERTISEMENT — Add Google AdSense code here</div>
+
+<footer>
+  &copy; 2026 StenoTrainer &nbsp;|&nbsp; <a href="privacy.html">Privacy Policy</a> &nbsp;|&nbsp; Free to play
+</footer>
+
+<script>
+// ══════════════════════════════════════════
+// WORD LISTS — add words as you learn more
+// ══════════════════════════════════════════
+const WORDS={
+  basic:["a","i","an","in","on","of","go","no","do","so","can","pin","bin","fin","hip","man","pan","ran","fan","cap","map","nap","gap","bad","mad","had","lap","nip","rip","dip","sip","cop","mop","hop","fog","log","dog","bog","hog","fig","big","dig","pig","den","hen","men","pen","bid","kid","rid","cod","rod","pod","nod","mob","rob","cab","lab","kin","gin","sin","pal","rag","bag","ram","ham","dam","rap","sap","jab"],
+  common:["rice","nice","mice","face","race","pace","lace","lake","cake","fake","make","rake","bake","safe","came","fame","game","name","same","lane","cane","base","case","made","fade","place","grace","crane","grain","plain","brain","chain","cabin","basic","magic","panic","robin","lemon","canal","local","coral","moral","medal","hike","bike","like","spike"],
+  numbers:["1","3","4","5","6","7","8","13","14","15","16","17","18","31","34","41","45","51","56","61","63","71","73","81","83","84"],
+  phrases:["a man","a dog","a big dog","a bad map","no can do","no more","so far","a dark road","can i go","so be it","a calm sea","a log cabin"],
+  mixed:["a","an","in","on","go","no","can","man","cap","map","bad","had","log","dog","big","dig","men","pen","bid","cod","mob","cab","rice","nice","face","race","lake","cake","make","safe","came","game","name","lane","base","case","place","grain","plain","cabin","magic","panic","lemon","canal","local","coral","medal"],
+  premium1:["machine","organic","monopoly","pandemic","criminal","magnetic","cardinal","romantic","mechanic","colonial","academic","republic","harmonic","clinical","physical","medical","radical","nominal","comical","logical"],
+  premium2:["a grand plan","so be happy","a big machine","no panic please","can i help","a basic program","so long ago","a dark cabin","begin again","on a mission"],
+};
+
+// ══════════════════════════════════════════
+// LEVELS — add new levels here over time
+// ══════════════════════════════════════════
+const LEVELS=[
+  {name:"Stone Plains",  icon:"🪨",danger:"crack",wpmGoal:15,acc:85,pool:WORDS.basic,   premium:false},
+  {name:"Common Caves",  icon:"🕳️",danger:"crack",wpmGoal:20,acc:88,pool:WORDS.common,  premium:false},
+  {name:"Number Jungle", icon:"🌿",danger:"water",wpmGoal:20,acc:88,pool:WORDS.numbers, premium:false},
+  {name:"Phrase Forest", icon:"🌲",danger:"water",wpmGoal:25,acc:90,pool:WORDS.phrases, premium:false},
+  {name:"Mixed Mines",   icon:"⛏️",danger:"crack",wpmGoal:30,acc:90,pool:WORDS.mixed,   premium:false},
+  {name:"Speed Summit",  icon:"⚡",danger:"water",wpmGoal:40,acc:92,pool:WORDS.mixed,   premium:false},
+  {name:"Premium Peak",  icon:"👑",danger:"crack",wpmGoal:45,acc:93,pool:WORDS.premium1,premium:true},
+  {name:"Elite Endgame", icon:"🔥",danger:"water",wpmGoal:55,acc:95,pool:WORDS.premium2,premium:true},
+];
+
+let unlocked=[0];
+let premiumOwned=false;
+try{unlocked=JSON.parse(localStorage.getItem('st_ul')||'[0]');}catch(e){}
+try{premiumOwned=localStorage.getItem('st_prem')==='1';}catch(e){}
+function saveU(){try{localStorage.setItem('st_ul',JSON.stringify(unlocked));}catch(e){}}
+
+let G={};
+let submitT=null,fbT=null,dangerT=null,animF=null;
+
+const cv=document.getElementById('scene');
+const ctx=cv.getContext('2d');
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function pick(pool,n=12){return shuffle([...pool]).slice(0,Math.min(n,pool.length));}
+function show(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');}
+
+function renderMenu(){
+  document.getElementById('lgrid').innerHTML=LEVELS.map((lv,i)=>{
+    const isUnlocked=unlocked.includes(i)||(lv.premium&&premiumOwned);
+    const locked=!isUnlocked;
+    const done=unlocked.includes(i+1)||(i===LEVELS.length-1&&unlocked.includes(i));
+    const star=done?'★':isUnlocked?'◎':'○';
+    return`<div class="lcard ${locked&&!lv.premium?'locked':''} ${done?'done':''} ${lv.premium?'premium':''}" data-idx="${i}">
+      <div class="li">${lv.icon}</div>
+      <div class="ln">Level ${i+1} ${star}</div>
+      <div class="lname">${lv.name}</div>
+      <div class="lmeta">≥${lv.wpmGoal} WPM · ${lv.acc}%</div>
+      ${lv.premium&&!premiumOwned?'<div class="pbadge">PREMIUM — $4.99</div>':''}
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.lcard').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const i=+el.dataset.idx;
+      const lv=LEVELS[i];
+      if(lv.premium&&!premiumOwned){show('s-pay');return;}
+      if(!unlocked.includes(i)&&!lv.premium)return;
+      startLevel(i);
+    });
+  });
+}
+
+// ── CANVAS DRAWING ──
+function stopAnim(){if(animF){cancelAnimationFrame(animF);animF=null;}}
+
+function drawCrack(danger){
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=danger>0.6?'#120505':'#080814';ctx.fillRect(0,0,W,H);
+  // stars
+  ctx.fillStyle='rgba(255,255,255,0.55)';
+  [[55,18],[130,32],[220,12],[330,38],[450,9],[540,28],[630,20],[710,35]].forEach(([x,y])=>{ctx.beginPath();ctx.arc(x,y,1,0,Math.PI*2);ctx.fill();});
+  // moon
+  ctx.fillStyle='#fffce0';ctx.beginPath();ctx.arc(W-55,38,16,0,Math.PI*2);ctx.fill();
+  // ground
+  const gy=H*0.63;
+  ctx.fillStyle='#3a2510';ctx.fillRect(0,gy,W,H-gy);
+  ctx.fillStyle='#5a3a18';ctx.fillRect(0,gy,W,9);
+  // cracks
+  const n=Math.floor(danger*9)+1;
+  for(let c=0;c<n;c++){
+    const cx=60+c*(W-120)/Math.max(n-1,1);
+    ctx.strokeStyle=`rgba(255,70,0,${0.25+danger*0.7})`;
+    ctx.lineWidth=danger>0.65?2.5:1.5;
+    ctx.beginPath();ctx.moveTo(cx,gy+3);ctx.lineTo(cx-14+Math.random()*28,gy+22+Math.random()*18);ctx.lineTo(cx+10+Math.random()*18,gy+38+Math.random()*12);ctx.stroke();
+    if(danger>0.35){ctx.beginPath();ctx.moveTo(cx,gy+5);ctx.lineTo(cx+16+Math.random()*12,gy+20+Math.random()*14);ctx.stroke();}
+  }
+  // glow
+  if(danger>0.25){
+    const gr=ctx.createLinearGradient(0,gy,0,gy+45);
+    gr.addColorStop(0,`rgba(255,90,0,${danger*0.45})`);gr.addColorStop(1,'rgba(255,90,0,0)');
+    ctx.fillStyle=gr;ctx.fillRect(0,gy,W,45);
+  }
+  drawChar(W/2,gy-10,danger);
+}
+
+function drawWater(danger){
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#04080f';ctx.fillRect(0,0,W,H);
+  // stars
+  ctx.fillStyle='rgba(255,255,255,0.45)';
+  [[60,18],[170,30],[280,12],[390,25],[510,10],[620,28],[720,35]].forEach(([x,y])=>{ctx.beginPath();ctx.arc(x,y,1,0,Math.PI*2);ctx.fill();});
+  // cave walls
+  ctx.fillStyle='#1e1510';ctx.fillRect(0,0,35,H);ctx.fillRect(W-35,0,35,H);
+  // platform
+  const py=H*0.68;
+  ctx.fillStyle='#3c2d1a';ctx.fillRect(35,py,W-70,H-py);
+  ctx.fillStyle='#4e3d28';ctx.fillRect(35,py,W-70,9);
+  // water
+  const wt=H-(danger*(H-py+25))-4;
+  ctx.fillStyle=danger>0.65?'rgba(0,50,170,.92)':'rgba(0,90,210,.82)';
+  ctx.fillRect(0,wt,W,H-wt);
+  // shimmer
+  ctx.fillStyle='rgba(120,200,255,0.25)';
+  for(let x=0;x<W;x+=28){ctx.fillRect(x,wt,14,3);}
+  // bubbles
+  if(danger>0.18){
+    ctx.fillStyle='rgba(160,230,255,0.4)';
+    [0.22,0.5,0.78].forEach(p=>{
+      const bx=W*p+Math.sin(Date.now()/750+p)*7;
+      const by=wt+10+Math.sin(Date.now()/550+p*3)*5;
+      ctx.beginPath();ctx.arc(bx,by,2.5,0,Math.PI*2);ctx.fill();
+    });
+  }
+  drawChar(W/2,Math.min(py,wt)-10,danger);
+}
+
+function drawChar(cx,cy,danger){
+  const shake=danger>0.55?(Math.random()-0.5)*4:0;
+  const x=cx+shake;
+  const r=Math.floor(90+danger*165);
+  const g=Math.floor(210-danger*160);
+  const col=`rgb(${r},${g},90)`;
+  ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.lineCap='round';
+  ctx.fillStyle=col;
+  ctx.beginPath();ctx.arc(x,cy-30,8,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.moveTo(x,cy-22);ctx.lineTo(x,cy-3);ctx.stroke();
+  if(danger>0.55){
+    ctx.beginPath();ctx.moveTo(x,cy-17);ctx.lineTo(x-15,cy-28);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,cy-17);ctx.lineTo(x+15,cy-28);ctx.stroke();
+  } else {
+    ctx.beginPath();ctx.moveTo(x,cy-17);ctx.lineTo(x-12,cy-8);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,cy-17);ctx.lineTo(x+12,cy-8);ctx.stroke();
+  }
+  ctx.beginPath();ctx.moveTo(x,cy-3);ctx.lineTo(x-10,cy+13);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x,cy-3);ctx.lineTo(x+10,cy+13);ctx.stroke();
+}
+
+function startScene(danger,type){
+  cv.width=cv.offsetWidth||640;
+  stopAnim();
+  function loop(){
+    if(type==='crack')drawCrack(danger);
+    else drawWater(danger);
+    animF=requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+// ── GAME LOGIC ──
+function startLevel(idx){
+  const lv=LEVELS[idx];
+  G={level:idx,words:pick(lv.pool,12),wordIdx:0,correct:0,attempts:0,startTime:null,locked:false,danger:0,type:lv.danger};
+  updateDisplay();updateHUD();
+  startScene(0,lv.danger);
+  startDanger();
+  show('s-play');
+  focusInput();
+}
+
+function startDanger(){
+  if(dangerT)clearInterval(dangerT);
+  dangerT=setInterval(()=>{
+    if(!G.startTime||G.locked)return;
+    G.danger=Math.min(1,G.danger+0.014);
+    updateDbar();
+    if(G.danger>=1){clearInterval(dangerT);triggerDeath();}
+  },400);
+}
+
+function updateDbar(){
+  const d=document.getElementById('dfill');
+  const pct=Math.round(G.danger*100);
+  d.style.width=pct+'%';
+  const hd=document.getElementById('h-danger');
+  if(G.danger<0.4){d.style.background='var(--green)';hd.style.color='var(--green)';hd.textContent='Safe';}
+  else if(G.danger<0.7){d.style.background='var(--gold)';hd.style.color='var(--gold)';hd.textContent='Warning!';}
+  else{d.style.background='var(--red)';hd.style.color='var(--red)';hd.textContent='DANGER!';}
+  startScene(G.danger,G.type);
+}
+
+function updateDisplay(){
+  document.getElementById('tw').textContent=G.words[G.wordIdx]||'';
+  document.getElementById('h-word').textContent=`${G.wordIdx+1}/${G.words.length}`;
+  document.getElementById('upc').innerHTML=G.words.slice(G.wordIdx+1,G.wordIdx+5).map(w=>`<span>${w}</span>`).join('');
+  document.getElementById('td').textContent='…';document.getElementById('td').className='tdisp';
+  document.getElementById('fb').textContent='';document.getElementById('fb').className='fb';
+}
+
+function updateHUD(){
+  const el=G.startTime?(Date.now()-G.startTime)/60000:null;
+  document.getElementById('h-wpm').textContent=el&&G.correct>0?Math.round(G.correct/el):'—';
+  document.getElementById('h-acc').textContent=G.attempts>0?Math.round((G.correct/G.attempts)*100)+'%':'—';
+}
+
+function focusInput(){document.getElementById('ri').focus();}
+
+function flashFb(ok){
+  const el=document.getElementById('fb');
+  el.textContent=ok?'correct!':'try again';el.className='fb '+(ok?'ok':'bad');
+  if(fbT)clearTimeout(fbT);
+  fbT=setTimeout(()=>{el.textContent='';el.className='fb';},600);
+}
+
+function submitWord(val){
+  if(G.locked)return;
+  const target=G.words[G.wordIdx];
+  if(!G.startTime)G.startTime=Date.now();
+  G.attempts++;
+  if(val.toLowerCase()===target.toLowerCase()){
+    G.correct++;G.locked=true;
+    G.danger=Math.max(0,G.danger-0.13);
+    updateDbar();flashFb(true);
+    document.getElementById('td').className='tdisp ok';
+    setTimeout(()=>{
+      G.locked=false;document.getElementById('ri').value='';
+      G.wordIdx++;updateHUD();
+      if(G.wordIdx>=G.words.length){endGame();return;}
+      updateDisplay();focusInput();
+    },300);
+  } else {
+    G.danger=Math.min(1,G.danger+0.06);
+    updateDbar();flashFb(false);
+    document.getElementById('ri').value='';
+    document.getElementById('td').textContent='…';document.getElementById('td').className='tdisp';
+  }
+}
+
+function triggerDeath(){
+  if(dangerT)clearInterval(dangerT);stopAnim();
+  const msg=G.type==='crack'?'The ground collapsed!':'The water got you!';
+  finishGame(false,msg);
+}
+
+function endGame(){
+  if(dangerT)clearInterval(dangerT);stopAnim();
+  const lv=LEVELS[G.level];
+  const el=(Date.now()-G.startTime)/60000;
+  const wpm=Math.round(G.correct/el);
+  const acc=Math.round((G.correct/G.attempts)*100);
+  const passed=wpm>=lv.wpmGoal&&acc>=lv.acc;
+  if(passed&&!lv.premium&&G.level+1<LEVELS.length&&!unlocked.includes(G.level+1)){
+    unlocked.push(G.level+1);saveU();
+  }
+  finishGame(passed,passed?'Level Passed!':wpm<lv.wpmGoal?`Need ${lv.wpmGoal} WPM — you got ${wpm}`:`Need ${lv.acc}% accuracy`);
+}
+
+function finishGame(passed,msg){
+  const el=G.startTime?(Date.now()-G.startTime)/60000:0.01;
+  const wpm=Math.round(G.correct/el);
+  const acc=G.attempts>0?Math.round((G.correct/G.attempts)*100):0;
+  document.getElementById('rbanner').textContent=msg;
+  document.getElementById('rbanner').className='rbanner '+(passed?'win':'lose');
+  document.getElementById('r-wpm').textContent=wpm;
+  document.getElementById('r-acc').textContent=acc+'%';
+  document.getElementById('r-cor').textContent=`${G.correct}/${G.words.length}`;
+  document.getElementById('r-goal').textContent=LEVELS[G.level].wpmGoal;
+  show('s-res');
+}
+
+document.getElementById('ri').addEventListener('input',function(){
+  if(G.locked){this.value='';return;}
+  const val=this.value;const clean=val.replace(/\s+/g,' ').trim();
+  const target=G.words[G.wordIdx]||'';
+  const td=document.getElementById('td');
+  td.textContent=val||'…';
+  if(clean.toLowerCase()===target.toLowerCase()){
+    if(submitT)clearTimeout(submitT);submitT=setTimeout(()=>submitWord(clean),80);return;
+  }
+  td.className='tdisp'+(clean.length===0?'':target.toLowerCase().startsWith(clean.toLowerCase())?' ok':' bad');
+  if(val.endsWith(' ')&&clean.length>0){if(submitT)clearTimeout(submitT);submitT=setTimeout(()=>submitWord(clean),80);}
+});
+
+document.getElementById('ri').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){e.preventDefault();const v=this.value.trim();if(v)submitWord(v);}
+});
+
+document.getElementById('s-play').addEventListener('click',focusInput);
+document.getElementById('b-quit').addEventListener('click',()=>{stopAnim();if(dangerT)clearInterval(dangerT);renderMenu();show('s-menu');});
+document.getElementById('b-retry').addEventListener('click',()=>startLevel(G.level));
+document.getElementById('b-rmenu').addEventListener('click',()=>{renderMenu();show('s-menu');});
+document.getElementById('b-pay-back').addEventListener('click',()=>{renderMenu();show('s-menu');});
+
+// ══════════════════════════════════════════
+// STRIPE PAYMENT — when you're ready:
+// 1. Sign up at stripe.com
+// 2. Create a Payment Link in your dashboard
+// 3. Replace the alert below with:
+//    window.location.href = 'YOUR_STRIPE_LINK';
+// ══════════════════════════════════════════
+document.getElementById('b-buy').addEventListener('click',()=>{
+  alert('Coming soon! Add your Stripe payment link here.');
+});
+
+renderMenu();
+</script>
+</body>
+</html>
