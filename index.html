@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StenoTrainer — Practice Steno the Fun Way</title>
+  <meta name="description" content="A free browser-based stenography trainer. Practice steno machine writing with speed and accuracy tracking."/>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+
+  <!-- GOOGLE ADSENSE — paste your approved code here -->
+
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --bg:#fef6fb;--surf:#fff;--surf2:#fce8f7;
+      --primary:#c264d4;--accent:#ff8fab;--green:#52c78a;--yellow:#ffd166;
+      --text:#3a2040;--muted:#9e7aaa;
+      --mono:'Courier New',monospace;--font:'Nunito',system-ui,sans-serif;
+      --display:'Fredoka One',cursive;
+      --rad:16px;--rad-sm:10px;
+    }
+    body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;flex-direction:column;background-image:radial-gradient(circle at 20% 20%, #f9d6f5 0%, transparent 50%),radial-gradient(circle at 80% 80%, #d6eeff 0%, transparent 50%);}
+
+    header{background:var(--surf);border-bottom:3px solid var(--primary);padding:.85rem 1.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;box-shadow:0 2px 12px rgba(194,100,212,.12);}
+    .logo{font-family:var(--display);font-size:1.6rem;color:var(--primary);text-decoration:none;letter-spacing:.02em;}
+    .logo span{color:var(--accent);}
+    nav a{color:var(--muted);text-decoration:none;margin-left:1.25rem;font-size:.85rem;font-weight:600;transition:color .2s;}
+    nav a:hover{color:var(--primary);}
+
+    .ad-slot{background:var(--surf2);border:1.5px dashed #e0b8f0;text-align:center;padding:.65rem;font-size:.7rem;color:var(--muted);letter-spacing:.06em;border-radius:8px;margin:.5rem;}
+
+    .page-body{flex:1;display:flex;padding:1.25rem;justify-content:center;}
+    .center-col{width:100%;max-width:660px;display:flex;flex-direction:column;gap:.85rem;}
+
+    .scr{display:none;flex-direction:column;align-items:center;gap:1.25rem;}
+    .scr.on{display:flex;}
+
+    /* MENU */
+    .m-title{font-family:var(--display);font-size:2.4rem;text-align:center;padding-top:.5rem;color:var(--primary);letter-spacing:.02em;}
+    .m-title span{color:var(--accent);}
+    .m-sub{font-size:.9rem;color:var(--muted);text-align:center;line-height:1.75;max-width:480px;font-weight:600;}
+
+    .lgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.75rem;width:100%;}
+    .lcard{background:var(--surf);border:2px solid #f0d6f9;border-radius:var(--rad);padding:1.1rem .85rem;cursor:pointer;text-align:center;transition:transform .18s,border-color .18s,box-shadow .18s;box-shadow:0 2px 8px rgba(194,100,212,.08);}
+    .lcard:hover:not(.locked){transform:translateY(-4px);border-color:var(--primary);box-shadow:0 6px 20px rgba(194,100,212,.2);}
+    .lcard.locked{opacity:.4;cursor:not-allowed;filter:grayscale(1);}
+    .lcard.done{border-color:var(--green);background:#f0fff8;}
+    .li{font-size:1.5rem;margin-bottom:.3rem;}
+    .ln{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.2rem;font-weight:700;}
+    .lname{font-size:.9rem;font-weight:800;margin-bottom:.2rem;color:var(--text);}
+    .lletters{font-family:var(--mono);font-size:.62rem;color:var(--primary);margin:.2rem 0;font-weight:700;}
+    .lmeta{font-size:.68rem;color:var(--muted);font-weight:600;}
+
+    /* HUD */
+    .hud{display:flex;gap:.6rem;width:100%;}
+    .hb{flex:1;background:var(--surf);border:2px solid #f0d6f9;border-radius:var(--rad-sm);padding:.6rem .5rem;text-align:center;box-shadow:0 2px 8px rgba(194,100,212,.08);}
+    .hl{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem;font-weight:700;}
+    .hv{font-size:1.2rem;font-weight:800;color:var(--primary);}
+
+    /* PROGRESS BAR */
+    .prog-wrap{width:100%;height:8px;background:#f0d6f9;border-radius:99px;overflow:hidden;}
+    .prog-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:99px;transition:width .3s;}
+
+    /* WORD CARD */
+    .word-card{background:var(--surf);border:2px solid #f0d6f9;border-radius:20px;padding:2rem 1.5rem;width:100%;text-align:center;min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;box-shadow:0 4px 16px rgba(194,100,212,.1);}
+    .target-word{font-family:var(--mono);font-size:2.6rem;font-weight:700;letter-spacing:.08em;color:var(--text);}
+
+    /* TYPED DISPLAY */
+    .tdisp{font-family:var(--mono);font-size:1.8rem;font-weight:700;width:100%;text-align:center;background:var(--surf);border:2.5px solid #f0d6f9;border-radius:var(--rad-sm);padding:.35rem .75rem;color:var(--text);letter-spacing:.06em;transition:border-color .15s,color .15s;min-height:50px;box-shadow:0 2px 8px rgba(194,100,212,.06);}
+    .tdisp.ok{border-color:var(--green);color:var(--green);}
+    .tdisp.bad{border-color:var(--accent);color:var(--accent);}
+    #ri{position:static;width:100%;height:auto;opacity:1;font-family:var(--mono);font-size:1.1rem;font-weight:700;text-align:center;border:2.5px solid #e0b8f0;border-radius:12px;padding:.6rem;background:var(--surf2);color:var(--text);outline:none;cursor:text;transition:border-color .2s;}
+    #ri:focus{border-color:var(--primary);}
+    #ri::placeholder{color:var(--muted);font-size:.9rem;font-weight:600;}
+    #sp-ri{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;}
+
+    .upcoming{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+    .upcoming span{font-family:var(--mono);font-size:.72rem;color:var(--muted);background:var(--surf2);border-radius:6px;padding:3px 9px;border:1.5px solid #f0d6f9;font-weight:600;}
+
+    .fb{font-size:1rem;font-weight:800;height:24px;line-height:24px;}
+    .fb.ok{color:var(--green);}.fb.bad{color:var(--accent);}
+    .hint{font-size:.72rem;color:var(--muted);text-align:center;font-weight:600;}
+
+    /* BUTTONS */
+    .btn{background:var(--surf);border:2px solid var(--primary);color:var(--primary);border-radius:99px;padding:.5rem 1.4rem;font-size:.88rem;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(194,100,212,.1);}
+    .btn:hover{background:var(--primary);color:#fff;transform:translateY(-2px);box-shadow:0 4px 14px rgba(194,100,212,.3);}
+    .btn.primary{background:var(--primary);color:#fff;}
+    .btn.primary:hover{background:#a84ec0;}
+    .brow{display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center;}
+
+    /* RESULTS */
+    .rbanner{font-family:var(--display);font-size:1.8rem;text-align:center;letter-spacing:.02em;}
+    .rbanner.win{color:var(--green);}.rbanner.lose{color:var(--accent);}
+    .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;width:100%;max-width:360px;}
+    .sbox{background:var(--surf);border:2px solid #f0d6f9;border-radius:var(--rad-sm);padding:.9rem;text-align:center;box-shadow:0 2px 8px rgba(194,100,212,.08);}
+    .slbl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.25rem;font-weight:700;}
+    .sval{font-size:1.5rem;font-weight:800;color:var(--primary);}
+
+    footer{background:var(--surf);border-top:2px solid #f0d6f9;text-align:center;padding:.85rem;font-size:.75rem;color:var(--muted);font-weight:600;}
+    footer a{color:var(--primary);text-decoration:none;}
+    footer a:hover{text-decoration:underline;}
+
+    /* speed test card */
+    .speed-card{width:100%;background:linear-gradient(135deg,#f9d6f5,#d6eeff);border:2px solid #e0b8f0;border-radius:var(--rad);padding:1.1rem 1.35rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;box-shadow:0 3px 12px rgba(194,100,212,.12);}
+    .speed-card-title{font-family:var(--display);font-size:1.1rem;color:var(--primary);letter-spacing:.02em;}
+    .speed-card-sub{font-size:.78rem;color:var(--muted);margin-top:.15rem;font-weight:600;}
+    .speed-card-best{font-size:.75rem;color:var(--primary);margin-top:.2rem;font-weight:700;}
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="index.html">Steno<span>Trainer</span></a>
+  <nav>
+    <a href="index.html">Play</a>
+    <a href="privacy.html">Privacy</a>
+  </nav>
+</header>
+
+<div class="ad-slot">ADVERTISEMENT — Add Google AdSense code here</div>
+
+<div class="page-body">
+
+  <div class="center-col">
+
+    <!-- MENU -->
+    <div class="scr on" id="s-menu">
+      <div class="m-title">Steno<span>Trainer</span></div>
+      <p class="m-sub">Practice your steno machine one stroke at a time. Pass each level to unlock the next!</p>
+      <div class="speed-card">
+        <div>
+          <div class="speed-card-title">Speed Test</div>
+          <div class="speed-card-sub">Find out your current WPM — no passing or failing, just your baseline</div>
+          <div class="speed-card-best" id="m-best"></div>
+        </div>
+        <button class="btn" id="b-speed-test" style="white-space:nowrap;">Take the test →</button>
+      </div>
+      <div class="lgrid" id="lgrid"></div>
+    </div>
+
+    <!-- SPEED TEST SETUP -->
+    <div class="scr" id="s-speed-setup">
+      <div class="m-title" style="font-size:1.5rem;">Speed <span>Test</span></div>
+      <p class="m-sub">Stroke as many words as you can in the time limit. No pressure — this just finds your baseline!</p>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center;width:100%;">
+        <div class="lcard" style="max-width:160px;cursor:pointer;" data-mins="1">
+          <div class="li">⏱</div>
+          <div class="lname">1 Minute</div>
+          <div class="lmeta">Quick check</div>
+        </div>
+        <div class="lcard" style="max-width:160px;cursor:pointer;" data-mins="2">
+          <div class="li">⏱</div>
+          <div class="lname">2 Minutes</div>
+          <div class="lmeta">More accurate</div>
+        </div>
+        <div class="lcard" style="max-width:160px;cursor:pointer;" data-mins="3">
+          <div class="li">⏱</div>
+          <div class="lname">3 Minutes</div>
+          <div class="lmeta">Most accurate</div>
+        </div>
+      </div>
+      <div class="brow"><button class="btn" id="b-speed-back">← Back</button></div>
+    </div>
+
+    <!-- SPEED TEST PLAY -->
+    <div class="scr" id="s-speed-play">
+      <div class="hud">
+        <div class="hb"><div class="hl">WPM</div><div class="hv" id="sp-wpm">—</div></div>
+        <div class="hb"><div class="hl">Time Left</div><div class="hv" id="sp-time" style="color:var(--red);">—</div></div>
+        <div class="hb"><div class="hl">Accuracy</div><div class="hv" id="sp-acc">—</div></div>
+        <div class="hb"><div class="hl">Words</div><div class="hv" id="sp-words">0</div></div>
+      </div>
+      <div class="prog-wrap"><div class="prog-fill" id="sp-prog" style="width:100%;background:var(--green);"></div></div>
+      <div class="word-card">
+        <div class="target-word" id="sp-tw">—</div>
+      </div>
+      <div class="tdisp" id="sp-td">…</div>
+      <input id="sp-ri" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <div class="fb" id="sp-fb"></div>
+      <div class="upcoming" id="sp-upc"></div>
+      <div class="hint">Stroke as many words as you can before time runs out!</div>
+      <div class="brow"><button class="btn" id="b-speed-quit">Stop Early</button></div>
+    </div>
+
+    <!-- SPEED TEST RESULTS -->
+    <div class="scr" id="s-speed-res">
+      <div style="font-size:1.6rem;font-weight:700;text-align:center;color:var(--gold);">Your Speed Result</div>
+      <div class="sgrid" style="max-width:400px;">
+        <div class="sbox"><div class="slbl">Your WPM</div><div class="sval" id="sr-wpm" style="font-size:2rem;color:var(--primary);">—</div></div>
+        <div class="sbox"><div class="slbl">Accuracy</div><div class="sval" id="sr-acc">—</div></div>
+        <div class="sbox"><div class="slbl">Words Done</div><div class="sval" id="sr-words">—</div></div>
+        <div class="sbox"><div class="slbl">Test Length</div><div class="sval" id="sr-mins">—</div></div>
+      </div>
+      <div id="sr-message" style="background:var(--surf2);border:2px solid #e0b8f0;border-radius:var(--rad);padding:1rem 1.25rem;font-size:.85rem;line-height:1.7;color:var(--muted);max-width:420px;text-align:center;font-weight:600;"></div>
+      <div style="font-size:.72rem;color:var(--muted);text-align:center;">Your personal best is saved — retake anytime to track your progress over time</div>
+      <div class="brow">
+        <button class="btn primary" id="b-speed-retry">Try Again</button>
+        <button class="btn" id="b-speed-done">← Menu</button>
+      </div>
+    </div>
+
+    <!-- PLAY -->
+    <div class="scr" id="s-play">
+      <div class="hud">
+        <div class="hb"><div class="hl">WPM</div><div class="hv" id="h-wpm">—</div></div>
+        <div class="hb"><div class="hl">Accuracy</div><div class="hv" id="h-acc">—</div></div>
+        <div class="hb"><div class="hl">Word</div><div class="hv" id="h-word">—</div></div>
+      </div>
+      <div class="prog-wrap"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="word-card">
+        <div class="target-word" id="tw">—</div>
+      </div>
+      <div class="tdisp" id="td">…</div>
+      <input id="ri" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="👆 Click here then stroke!"/>
+      <div class="fb" id="fb"></div>
+      <div class="upcoming" id="upc"></div>
+      <div class="hint">Click the box above to activate it — then stroke your word and it auto-submits!</div>
+      <div class="brow"><button class="btn" id="b-quit">← Levels</button></div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="scr" id="s-res">
+      <div class="rbanner" id="rbanner"></div>
+      <div class="sgrid">
+        <div class="sbox"><div class="slbl">Your WPM</div><div class="sval" id="r-wpm">—</div></div>
+        <div class="sbox"><div class="slbl">Accuracy</div><div class="sval" id="r-acc">—</div></div>
+        <div class="sbox"><div class="slbl">Correct</div><div class="sval" id="r-cor">—</div></div>
+        <div class="sbox"><div class="slbl">Goal WPM</div><div class="sval" id="r-goal">—</div></div>
+      </div>
+      <div id="r-missed" style="display:none;flex-wrap:wrap;gap:6px;justify-content:center;width:100%;max-width:400px;padding:.5rem;"></div>
+      <div class="brow">
+        <button class="btn primary" id="b-retry">Try Again</button>
+        <button class="btn" id="b-rmenu">Levels</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="ad-slot">ADVERTISEMENT — Add Google AdSense code here</div>
+
+<footer>
+  &copy; 2026 StenoTrainer &nbsp;|&nbsp; <a href="privacy.html">Privacy Policy</a> &nbsp;|&nbsp; Free to use
+</footer>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// LEVELS
+// All words are single-stroke phonetic only.
+// Words go easy → hard within each level.
+// Add more levels and words as you learn new strokes!
+// ══════════════════════════════════════════════════════════════
+const LEVELS = [
+  {
+    name:"First strokes", icon:"🌱",
+    wpmGoal:10, acc:80, letters:"Short words from your AtoZ book",
+    words:["ad","do","to","up","ace","act","age","aid","aim","air","ant","arc","arm","art","ate","bad","bag","bam","ban","bar","bay","bed","beg","bet","bib","bid","big","bin","bit","biz","bob","boo","boy","cab","cad","can","cap","car","cop","cot","coy","cub","cut","dab","dad","day","den","did","die","dim","din","dip","dot","dud","dug","egg","fab","fad","fan","far","fat","fed","fee","few","fib","fig","fin","fir","fit","fly","for","fun","fur"]
+  },
+  {
+    name:"More short words", icon:"📝",
+    wpmGoal:15, acc:82, letters:"3-letter words",
+    words:["gab","gad","gag","gap","gas","gay","gel","gem","gig","gin","goo","got","hag","ham","hat","hem","hen","her","hid","hip","hit","hog","hop","hot","how","hut","ice","jab","jag","jam","jaw","jet","jig","jot","jug","jut","keg","kid","kin","kit","law","leg","let","lid","lot","mad","man","map","mat","men","met","mop","nab","nag","nap","net","nil","nod","nor","not","now","nut","oat","oil","one","our","out","owl","own"]
+  },
+  {
+    name:"Even more short words", icon:"✏️",
+    wpmGoal:18, acc:83, letters:"3-letter words continued",
+    words:["pad","pal","pan","par","pat","paw","pay","peg","pen","pet","pie","pig","pin","pit","pod","pot","rag","ram","ran","rap","rat","raw","red","rib","rid","rig","rim","rip","rod","rug","run","sat","saw","say","see","set","sit","son","sue","tan","tar","tin","ton","top","tot","toy","try","tub","two","use","vac","van","vat","vie","vim","vow","wag","war","web","wed","wet","who","wig","win","wiz","wok","won","wry","yam","yap","yaw","yay","yen","yet","yup","zag","zap","zen","zig","zip","zoo"]
+  },
+  {
+    name:"4-letter words A", icon:"🔤",
+    wpmGoal:20, acc:84, letters:"4-letter words",
+    words:["ache","babe","back","bail","bait","bake","band","bark","barn","base","bass","bead","beak","beam","bean","beat","beef","beep","beer","beet","bell","belt","bend","bent","bide","bike","bile","bill","bind","bing","bite","bone","book","boom","bore","born","boss","brew","brim","buzz","cage","cake","came","cane","cape","card","care","case","chew","clam","clap","clay","clef","clip","club","clue","coat","cone","cope","core","cork","corn","cram","crew","cube","cute","dare","dark","darn","daze","dead","dean","deck","deed","dice","dike","dill","dime","dine","ding"]
+  },
+  {
+    name:"4-letter words B", icon:"🔤",
+    wpmGoal:22, acc:85, letters:"4-letter words continued",
+    words:["dirt","door","dope","dose","dote","dove","doze","drip","drug","drum","dude","dull","dupe","ease","face","fact","fade","fail","fair","fake","fame","fang","farm","fate","fear","feed","feel","felt","fern","feud","fife","fill","find","fine","fire","fizz","flip","flit","flop","food","form","fuel","gait","game","gape","gaze","gear","geek","germ","gill","girl","glad","glee","glue","glum","goat","gone","good","gore","gram","grid","grip","grow","hack","hail","hair","hand","hang","hard","hark","harm","harp","hate","haze","head","heck","heed","hide","hill","hint","hire","hood","hoop","hope","horn","hose","hunt"]
+  },
+  {
+    name:"4-letter words C", icon:"🔤",
+    wpmGoal:24, acc:85, letters:"4-letter words continued",
+    words:["jack","jade","jail","jazz","jeer","jerk","jiff","joke","keep","kick","kill","kiss","kite","lace","lack","lake","lame","lard","lark","lass","late","leaf","leap","leer","less","lice","lick","life","like","lime","line","lint","load","loan","look","loom","loop","loot","lope","lord","lore","love","luck","mace","maid","mail","main","make","mark","mate","maze","meek","meet","melt","mere","mice","mike","mild","mile","mill","mind","miss","mood","moor","mope","more","morn","mote","move","mute","mutt","nail","name","nape","near","neck","nerd","nice","nick","norm","nose","note"]
+  },
+  {
+    name:"4-letter words D", icon:"🔤",
+    wpmGoal:26, acc:86, letters:"4-letter words continued",
+    words:["ooze","pack","pail","pain","pair","pant","part","pass","peep","pelt","perk","perm","pick","pile","pill","pine","pipe","plan","play","plea","poem","poke","pole","pool","poor","pore","pose","pray","prep","prim","prom","quip","quit","quiz","race","rack","rage","rail","rain","rake","rare","rate","rear","rice","ride","ring","ripe","rise","roam","roar","robe","rock","rose","runt","ruse","same","sate","seat","seen","sent","shin","shop","shot","show","size","skit","slap","slim","slip","slit","slop","smog","sole","song","soon","spot","step","stew","suit","swag","swam","sway","swig","swim","swum","tack","take","tart","tell","than","then"]
+  },
+  {
+    name:"4-letter words E + special sounds", icon:"🔤",
+    wpmGoal:28, acc:86, letters:"4-letter words + OU OI AU sounds",
+    words:["tier","tile","tilt","time","tire","toad","tool","tore","toss","tote","trim","trip","true","tube","tuck","tune","twig","twin","twit","vain","veer","veil","vend","vice","view","vile","vine","vote","waft","wage","wait","wand","want","ward","warm","warn","warp","wart","wean","well","whet","whim","whip","whiz","whom","wick","wide","wife","wind","wine","wipe","wire","woke","wool","word","work","worm","wrap","writ","yack","yard","yeah","year","yell","yoke","yuck","yule","zing","zone","zoom","aunt","balk","boil","brow","claw","coil","coin","cowl","down","fawn","foil","fowl","gout","gown","half","haul","hawk","howl","join","jowl","lawn","loin","loud","maul","noun","pawn","plow","pout","prow","soil","talk","tall","thaw","toil","town","veal","walk","wall","yawn"]
+  },
+  {
+    name:"5-letter words A", icon:"⚡",
+    wpmGoal:28, acc:87, letters:"5-letter words",
+    words:["badge","barge","beige","black","blade","blame","bleak","board","booze","bough","bowel","brace","brain","brand","brawl","brawn","brick","brief","broke","brook","broom","brown","brunt","build","built","chair","chalk","chase","cheat","check","cheek","chick","choir","chord","chore","chose","chuck","clack","claim","clean","clear","cleat","click","cling","close","clout","clown","cower","craft","crane","crate","crawl","craze","cream","creep","crime","croon","crowd","crown","cruel","dense","doubt","dowel","draft","drain","drape","drawl","dream","drill","drone","drool","droop","false","fault","fence","flack","flake","flame","flick","flood"]
+  },
+  {
+    name:"5-letter words B", icon:"⚡",
+    wpmGoal:30, acc:88, letters:"5-letter words continued",
+    words:["floor","floss","found","frail","frame","freak","frill","front","frown","froze","fruit","gauze","geese","glade","glaze","gleam","glide","glove","grain","grape","graze","green","gripe","groin","grout","growl","grunt","guard","guide","guild","hedge","hound","jaunt","learn","ledge","light","loose","merge","might","mound","night","noise","nurse","ounce","paint","phone","place","poise","prime","prize","proof","prose","proud","prowl","purse","quack","quail","quake","queen","queer","quick","quill","quilt","quirk","raise","rhyme","ridge","rouge","round","route","saint","scale","seize","shape","sharp","sheet","shoot","shore","skate","skill"]
+  },
+  {
+    name:"5-letter words C", icon:"⚡",
+    wpmGoal:32, acc:89, letters:"5-letter words continued",
+    words:["slant","slate","sleet","slime","smack","smile","smoke","snack","snoop","spare","spine","spool","sport","stalk","stall","start","steep","store","storm","sweep","sweet","swell","swift","swine","swing","swoon","taunt","tease","those","thumb","tight","towel","track","trail","trick","troop","truck","twang","tweak","tweed","twice","twill","twine","twirl","vowel","wedge","whack","whale","wheat","wheel","while","whine","whirl","white","whole","world","worse","wrack","wreck","wring","write","wrong","wrote","wrung","yield","young"]
+  },
+  {
+    name:"Speed run!", icon:"🏆",
+    wpmGoal:35, acc:90, letters:"All words from your book — full speed!",
+    words:["bounce","coarse","crease","cruise","flounce","freeze","friend","ground","phrase","please","pounce","school","trounce","wheeze","wrought","badge","beige","brain","chair","chase","check","cheek","claim","clean","clear","cream","crime","dense","drain","dream","fault","flame","floor","frail","frame","freak","grain","grape","green","gripe","guide","hedge","hound","learn","ledge","light","might","night","noise","nurse","ounce","paint","phone","place","poise","prime","prize","proof","proud","raise","rhyme","ridge","rouge","round","route","saint","scale","seize","shape","sharp","sheet","shoot","shore","skill","slant","sleet","slime","smile","smoke","spare","spine","spool","sport","stall","start","steep","store","storm","sweep","sweet","swift","swing","taunt","tease","those","thumb","tight","track","trail","trick","troop","twirl","whale","wheel","while","whirl","world","write","wrong","yield","young"]
+  }
+];
+
+
+let unlocked = [0];
+try { unlocked = JSON.parse(localStorage.getItem('st_clean_ul') || '[0]'); } catch(e) {}
+function saveState() { try { localStorage.setItem('st_clean_ul', JSON.stringify(unlocked)); } catch(e) {} }
+
+let G = {};
+let submitT = null, fbT = null;
+
+// ── MISSED WORDS — stored across sessions per level ──
+function getMissed(idx) {
+  try { return JSON.parse(localStorage.getItem(`st_missed_${idx}`) || '{}'); } catch(e) { return {}; }
+}
+function saveMissed(idx, missed) {
+  try { localStorage.setItem(`st_missed_${idx}`, JSON.stringify(missed)); } catch(e) {}
+}
+
+function buildQueue(words, missedMap, n=14) {
+  // Start with ordered words (easy → hard), up to n
+  const base = words.slice(0, Math.min(n, words.length));
+  // Sprinkle in missed words from previous sessions at the front
+  const missedWords = Object.entries(missedMap)
+    .filter(([,count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])   // most missed first
+    .map(([word]) => word)
+    .slice(0, 4);                   // max 4 carried-in missed words
+  // Insert missed words near the start, avoiding duplicates
+  const queue = [...base];
+  missedWords.forEach(w => { if (!queue.includes(w)) queue.splice(2, 0, w); });
+  return queue;
+}
+
+function show(id) { document.querySelectorAll('.scr').forEach(s => s.classList.remove('on')); document.getElementById(id).classList.add('on'); }
+
+function renderMenu() {
+  document.getElementById('lgrid').innerHTML = LEVELS.map((lv, i) => {
+    const locked = !unlocked.includes(i);
+    const done = unlocked.includes(i + 1);
+    const star = done ? '★' : !locked ? '◎' : '○';
+    // Show how many words need work if any
+    const missed = getMissed(i);
+    const missedCount = Object.values(missed).filter(c => c > 0).length;
+    const missedTag = !locked && missedCount > 0 ? `<div class="lmeta" style="color:var(--red);margin-top:.2rem;">⚠ ${missedCount} word${missedCount>1?'s':''} to review</div>` : '';
+    return `<div class="lcard ${locked ? 'locked' : ''} ${done ? 'done' : ''}" data-idx="${i}">
+      <div class="li">${lv.icon}</div>
+      <div class="ln">Level ${i + 1} ${star}</div>
+      <div class="lname">${lv.name}</div>
+      <div class="lletters">${lv.letters}</div>
+      <div class="lmeta">≥${lv.wpmGoal} WPM · ${lv.acc}%</div>
+      ${missedTag}
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.lcard:not(.locked)').forEach(el => {
+    el.addEventListener('click', () => startLevel(+el.dataset.idx));
+  });
+}
+
+function startLevel(idx) {
+  const lv = LEVELS[idx];
+  const missedMap = getMissed(idx);
+  G = {
+    idx,
+    queue: buildQueue(lv.words, missedMap),
+    wordIdx: 0,
+    correct: 0,
+    attempts: 0,
+    startTime: null,
+    locked: false,
+    missedMap: {...missedMap},   // track misses this session
+    missedThisSession: {},       // words missed THIS session only
+    totalWords: 0,               // counts including recycled
+  };
+  G.totalWords = G.queue.length;
+  updateDisplay();
+  updateHUD();
+  show('s-play');
+  focusInput();
+}
+
+function updateDisplay() {
+  const word = G.queue[G.wordIdx] || '';
+  document.getElementById('tw').textContent = word;
+  // Progress shows position in original queue, not counting recycled repeats
+  const prog = Math.min(G.wordIdx, G.totalWords);
+  document.getElementById('h-word').textContent = `${prog + 1}/${G.totalWords}`;
+  document.getElementById('prog-fill').style.width = `${(prog / G.totalWords) * 100}%`;
+  document.getElementById('upc').innerHTML = G.queue.slice(G.wordIdx + 1, G.wordIdx + 5).map(w => `<span>${w}</span>`).join('');
+  document.getElementById('td').textContent = '…';
+  document.getElementById('td').className = 'tdisp';
+  document.getElementById('fb').textContent = '';
+  document.getElementById('fb').className = 'fb';
+}
+
+function updateHUD() {
+  const el = G.startTime ? (Date.now() - G.startTime) / 60000 : null;
+  document.getElementById('h-wpm').textContent = el && G.correct > 0 ? Math.round(G.correct / el) : '—';
+  document.getElementById('h-acc').textContent = G.attempts > 0 ? Math.round((G.correct / G.attempts) * 100) + '%' : '—';
+}
+
+function focusInput() { document.getElementById('ri').focus(); }
+
+function flashFb(ok, word) {
+  const el = document.getElementById('fb');
+  el.textContent = ok ? 'correct!' : `try again — "${word}"`;
+  el.className = 'fb ' + (ok ? 'ok' : 'bad');
+  if (fbT) clearTimeout(fbT);
+  fbT = setTimeout(() => { el.textContent = ''; el.className = 'fb'; }, ok ? 500 : 1200);
+}
+
+function submitWord(val) {
+  if (G.locked) return;
+  const target = G.queue[G.wordIdx];
+  if (!G.startTime) G.startTime = Date.now();
+  G.attempts++;
+
+  if (val.toLowerCase() === target.toLowerCase()) {
+    // CORRECT
+    G.correct++;
+    G.locked = true;
+    flashFb(true, target);
+    document.getElementById('td').className = 'tdisp ok';
+
+    // If this word was previously missed, reduce its miss count
+    if (G.missedMap[target] > 0) {
+      G.missedMap[target] = Math.max(0, G.missedMap[target] - 1);
+    }
+
+    setTimeout(() => {
+      G.locked = false;
+      document.getElementById('ri').value = '';
+      G.wordIdx++;
+      updateHUD();
+      if (G.wordIdx >= G.queue.length) { endGame(); return; }
+      updateDisplay();
+      focusInput();
+    }, 300);
+
+  } else {
+    // WRONG — recycle the word back into the queue 3 positions later
+    G.missedMap[target] = (G.missedMap[target] || 0) + 1;
+    G.missedThisSession[target] = (G.missedThisSession[target] || 0) + 1;
+
+    // Insert the word back into the queue a few spots ahead
+    const insertAt = Math.min(G.wordIdx + 3, G.queue.length);
+    G.queue.splice(insertAt, 0, target);
+
+    flashFb(false, target);
+    document.getElementById('ri').value = '';
+    document.getElementById('td').textContent = '…';
+    document.getElementById('td').className = 'tdisp';
+  }
+}
+
+function endGame() {
+  const lv = LEVELS[G.idx];
+  const el = (Date.now() - G.startTime) / 60000;
+  const wpm = Math.round(G.correct / el);
+  const acc = Math.round((G.correct / G.attempts) * 100);
+  const passed = wpm >= lv.wpmGoal && acc >= lv.acc;
+
+  // Save updated missed words to storage
+  saveMissed(G.idx, G.missedMap);
+
+  if (passed) {
+    const next = G.idx + 1;
+    if (next < LEVELS.length && !unlocked.includes(next)) {
+      unlocked.push(next);
+      saveState();
+    }
+  }
+
+  // Build missed words summary for results screen
+  const missedList = Object.entries(G.missedThisSession)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  document.getElementById('rbanner').textContent = passed ? 'Level Passed!' : wpm < lv.wpmGoal ? `Need ${lv.wpmGoal} WPM — you got ${wpm}` : `Need ${lv.acc}% accuracy — you got ${acc}%`;
+  document.getElementById('rbanner').className = 'rbanner ' + (passed ? 'win' : 'lose');
+  document.getElementById('r-wpm').textContent = wpm;
+  document.getElementById('r-acc').textContent = acc + '%';
+  document.getElementById('r-cor').textContent = `${G.correct}/${G.totalWords}`;
+  document.getElementById('r-goal').textContent = lv.wpmGoal;
+
+  // Show missed words if any
+  const missedEl = document.getElementById('r-missed');
+  if (missedList.length > 0) {
+    missedEl.innerHTML = `<div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.4rem;">Words to review</div>` +
+      missedList.map(([w, c]) => `<span style="font-family:var(--mono);background:var(--surf);border:1px solid var(--red);border-radius:6px;padding:3px 10px;font-size:.85rem;color:var(--red);">${w} ×${c}</span>`).join(' ');
+    missedEl.style.display = 'flex';
+  } else {
+    missedEl.style.display = 'none';
+  }
+
+  show('s-res');
+}
+
+document.getElementById('ri').addEventListener('input', function () {
+  if (G.locked) { this.value = ''; return; }
+  const val = this.value;
+  const clean = val.replace(/\s+/g, ' ').trim();
+  const target = G.words[G.wordIdx] || '';
+  const td = document.getElementById('td');
+  td.textContent = val || '…';
+  if (clean.toLowerCase() === target.toLowerCase()) {
+    if (submitT) clearTimeout(submitT);
+    submitT = setTimeout(() => submitWord(clean), 80);
+    return;
+  }
+  td.className = 'tdisp' + (clean.length === 0 ? '' : target.toLowerCase().startsWith(clean.toLowerCase()) ? ' ok' : ' bad');
+  if (val.endsWith(' ') && clean.length > 0) {
+    if (submitT) clearTimeout(submitT);
+    submitT = setTimeout(() => submitWord(clean), 80);
+  }
+});
+
+document.getElementById('ri').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { e.preventDefault(); const v = this.value.trim(); if (v) submitWord(v); }
+});
+
+document.getElementById('s-play').addEventListener('click', focusInput);
+document.getElementById('b-quit').addEventListener('click', () => { renderMenu(); show('s-menu'); });
+document.getElementById('b-retry').addEventListener('click', () => startLevel(G.idx));
+document.getElementById('b-rmenu').addEventListener('click', () => { renderMenu(); show('s-menu'); });
+
+// ══════════════════════════════════════════════════════════════
+// SPEED TEST WORDS — common single-stroke words, all letters except X
+// ══════════════════════════════════════════════════════════════
+const SPEED_WORDS = [
+  "a","if","hi","ran","wag","yak","zip","bad","fig","jam","nod","race","wade","zone",
+  "back","beef","edge","lake","open","ride","wake","zeal","and","for","not","but",
+  "can","had","him","his","how","man","new","now","old","see","two","way","who","boy",
+  "did","get","has","her","let","put","say","she","too","use","was","day","may","big",
+  "dog","end","far","got","job","keep","kind","last","left","life","long","look","made",
+  "make","many","name","need","once","only","over","part","plan","play","real",
+  "same","side","some","take","tell","than","them","then","time","turn","very",
+  "want","well","went","when","will","with","word","work","year","also","been",
+  "call","came","come","does","down","even","find","five","form","four","gave","give",
+  "gone","good","hand","hard","have","head","help","here","high","hold","home","hope",
+  "into","just","know","land","lead","lean","line","link","live","lose","love","mind",
+  "more","most","move","much","must","near","nine","note","once","onto","paid",
+  "past","pick","pipe","poem","poll","pond","poor","port","post","pull","pure",
+  "rain","read","rely","rest","ride","ring","rise","road","role","roof","rope","rose",
+  "rule","rush","safe","said","sail","salt","sand","save","seal","seek","send","sign",
+  "sing","sink","site","size","skin","slip","slow","sold","sole","song","soon","sort",
+  "soul","spin","spot","star","stay","stem","step","stop","such","suit","talk","tall",
+  "task","team","tear","test","thin","tide","till","tiny","tire","told","tone","took",
+  "tool","town","trap","tree","trim","trip","true","tube","tune","type","unit","upon",
+  "vast","view","vine","void","vote","wall","warm","warn","wash","wave","weak","wear",
+  "weed","week","wife","wild","wind","wine","wing","wire","wise","wish","wolf","wood",
+  "wool","wore","worm","worn","wrap","yard","yarn","yoga","your","zero","zest","zinc","zoom",
+  "beige","eight","field","light","reign","waive","yield","weird","bland","fight",
+  "gripe","night","rouge","wield","zealot","zigzag"
+];
+
+let ST = {}, stTimer = null, stSubmitT = null, stFbT = null, speedTestMins = 1;
+
+function getBestSpeed() { try { return JSON.parse(localStorage.getItem('st_best') || 'null'); } catch(e) { return null; } }
+function saveBestSpeed(wpm, acc) { try { localStorage.setItem('st_best', JSON.stringify({wpm, acc, date: new Date().toLocaleDateString()})); } catch(e) {} }
+function shuffleArr(a) { const b=[...a]; for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
+function buildSpeedQueue() { return [...shuffleArr(SPEED_WORDS),...shuffleArr(SPEED_WORDS),...shuffleArr(SPEED_WORDS)]; }
+function formatTime(s) { const m=Math.floor(s/60); return m>0?`${m}:${(s%60).toString().padStart(2,'0')}`:`${s}s`; }
+
+function updateMenuBest() {
+  const best = getBestSpeed();
+  const el = document.getElementById('m-best');
+  if (el && best) el.textContent = `Personal best: ${best.wpm} WPM · ${best.acc}% accuracy · ${best.date}`;
+}
+
+function startSpeedTest(mins) {
+  speedTestMins = mins;
+  ST = { queue: buildSpeedQueue(), wordIdx:0, correct:0, attempts:0, secondsLeft:mins*60, locked:false, started:false };
+  document.getElementById('sp-tw').textContent = ST.queue[0];
+  document.getElementById('sp-upc').innerHTML = ST.queue.slice(1,5).map(w=>`<span>${w}</span>`).join('');
+  document.getElementById('sp-td').textContent = '…';
+  document.getElementById('sp-td').className = 'tdisp';
+  document.getElementById('sp-time').textContent = formatTime(ST.secondsLeft);
+  document.getElementById('sp-time').style.color = 'var(--gold)';
+  document.getElementById('sp-prog').style.width = '100%';
+  document.getElementById('sp-prog').style.background = 'var(--green)';
+  document.getElementById('sp-wpm').textContent = '—';
+  document.getElementById('sp-acc').textContent = '—';
+  document.getElementById('sp-words').textContent = '0';
+  document.getElementById('sp-fb').textContent = '';
+  show('s-speed-play');
+  document.getElementById('sp-ri').focus();
+}
+
+function startStTimer() {
+  if (stTimer) clearInterval(stTimer);
+  const total = ST.secondsLeft;
+  stTimer = setInterval(() => {
+    ST.secondsLeft--;
+    document.getElementById('sp-time').textContent = formatTime(ST.secondsLeft);
+    document.getElementById('sp-prog').style.width = (ST.secondsLeft/total*100)+'%';
+    if (ST.secondsLeft <= 10) { document.getElementById('sp-prog').style.background='var(--red)'; document.getElementById('sp-time').style.color='var(--red)'; }
+    else if (ST.secondsLeft <= 30) { document.getElementById('sp-prog').style.background='var(--gold)'; }
+    if (ST.secondsLeft <= 0) { clearInterval(stTimer); endSpeedTest(); }
+  }, 1000);
+}
+
+function submitSpeedWord(val) {
+  if (ST.locked) return;
+  const target = ST.queue[ST.wordIdx];
+  if (!ST.started) { ST.started = true; startStTimer(); }
+  ST.attempts++;
+  if (val.toLowerCase() === target.toLowerCase()) {
+    ST.correct++;
+    ST.locked = true;
+    const el = document.getElementById('sp-fb');
+    el.textContent = 'correct!'; el.className = 'fb ok';
+    if (stFbT) clearTimeout(stFbT);
+    stFbT = setTimeout(() => { el.textContent=''; el.className='fb'; }, 400);
+    document.getElementById('sp-td').className = 'tdisp ok';
+    document.getElementById('sp-words').textContent = ST.correct;
+    const elapsed = (speedTestMins*60 - ST.secondsLeft) / 60;
+    if (elapsed > 0) document.getElementById('sp-wpm').textContent = Math.round(ST.correct/elapsed);
+    document.getElementById('sp-acc').textContent = Math.round(ST.correct/ST.attempts*100)+'%';
+    setTimeout(() => {
+      ST.locked = false;
+      document.getElementById('sp-ri').value = '';
+      ST.wordIdx++;
+      document.getElementById('sp-tw').textContent = ST.queue[ST.wordIdx]||'';
+      document.getElementById('sp-upc').innerHTML = ST.queue.slice(ST.wordIdx+1,ST.wordIdx+5).map(w=>`<span>${w}</span>`).join('');
+      document.getElementById('sp-td').textContent = '…';
+      document.getElementById('sp-td').className = 'tdisp';
+      document.getElementById('sp-ri').focus();
+    }, 200);
+  } else {
+    const el = document.getElementById('sp-fb');
+    el.textContent = 'try again'; el.className = 'fb bad';
+    if (stFbT) clearTimeout(stFbT);
+    stFbT = setTimeout(() => { el.textContent=''; el.className='fb'; }, 600);
+    document.getElementById('sp-ri').value = '';
+    document.getElementById('sp-td').textContent = '…';
+    document.getElementById('sp-td').className = 'tdisp';
+  }
+}
+
+function endSpeedTest() {
+  if (stTimer) clearInterval(stTimer);
+  const wpm = ST.correct > 0 ? Math.round(ST.correct / speedTestMins) : 0;
+  const acc = ST.attempts > 0 ? Math.round(ST.correct/ST.attempts*100) : 0;
+  const best = getBestSpeed();
+  const isNewBest = !best || wpm > best.wpm;
+  if (isNewBest) saveBestSpeed(wpm, acc);
+  document.getElementById('sr-wpm').textContent = wpm;
+  document.getElementById('sr-acc').textContent = acc+'%';
+  document.getElementById('sr-words').textContent = ST.correct;
+  document.getElementById('sr-mins').textContent = speedTestMins+' min';
+  let msg = '';
+  if (wpm < 20) msg = `You're at ${wpm} WPM — that's a great starting point! Most beginners start here. Keep drilling and speed builds faster than you think.`;
+  else if (wpm < 40) msg = `You're at ${wpm} WPM — solid progress! CART captioning needs around 180 WPM, so keep going.`;
+  else if (wpm < 60) msg = `You're at ${wpm} WPM — really good for where you are! The foundations are clearly working.`;
+  else if (wpm < 100) msg = `You're at ${wpm} WPM — impressive speed! You're building real momentum.`;
+  else if (wpm < 150) msg = `You're at ${wpm} WPM — professional territory is starting to show! CART is within reach.`;
+  else if (wpm < 180) msg = `You're at ${wpm} WPM — so close to CART captioning speed! Keep pushing!`;
+  else msg = `You're at ${wpm} WPM — that's professional speed! Time to start thinking about certification.`;
+  if (isNewBest && best) msg += ' 🎉 New personal best!';
+  document.getElementById('sr-message').textContent = msg;
+  show('s-speed-res');
+  updateMenuBest();
+}
+
+document.getElementById('sp-ri').addEventListener('input', function() {
+  if (ST.locked) { this.value=''; return; }
+  const val=this.value, clean=val.replace(/\s+/g,' ').trim(), target=ST.queue[ST.wordIdx]||'';
+  const td=document.getElementById('sp-td');
+  td.textContent=val||'…';
+  if (clean.toLowerCase()===target.toLowerCase()) { if(stSubmitT)clearTimeout(stSubmitT); stSubmitT=setTimeout(()=>submitSpeedWord(clean),80); return; }
+  td.className='tdisp'+(clean.length===0?'':target.toLowerCase().startsWith(clean.toLowerCase())?' ok':' bad');
+  if (val.endsWith(' ')&&clean.length>0) { if(stSubmitT)clearTimeout(stSubmitT); stSubmitT=setTimeout(()=>submitSpeedWord(clean),80); }
+});
+document.getElementById('sp-ri').addEventListener('keydown', function(e) { if(e.key==='Enter'){e.preventDefault();const v=this.value.trim();if(v)submitSpeedWord(v);} });
+document.getElementById('s-speed-play').addEventListener('click', ()=>document.getElementById('sp-ri').focus());
+document.getElementById('b-speed-test').addEventListener('click', ()=>show('s-speed-setup'));
+document.getElementById('b-speed-back').addEventListener('click', ()=>show('s-menu'));
+document.getElementById('b-speed-quit').addEventListener('click', ()=>{ if(stTimer)clearInterval(stTimer); endSpeedTest(); });
+document.getElementById('b-speed-done').addEventListener('click', ()=>{ renderMenu(); show('s-menu'); });
+document.getElementById('b-speed-retry').addEventListener('click', ()=>startSpeedTest(speedTestMins));
+document.querySelectorAll('[data-mins]').forEach(el=>{ el.addEventListener('click', ()=>startSpeedTest(+el.dataset.mins)); });
+
+renderMenu();
+updateMenuBest();
+</script>
+</body>
+</html>
